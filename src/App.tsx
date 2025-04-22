@@ -3,6 +3,7 @@ import './App.css';
 import { User } from './types';
 import Form from './components/Form';
 import UsersList from './components/UsersList';
+import EditUserForm from './components/EditUserForm';
 import { fetchUsers, LogIn } from './services/usersService';
 import Login from './components/Login';
 
@@ -16,7 +17,9 @@ interface AppState {
 interface UIState {
     isDarkMode: boolean;
     showNotification: boolean;
-    newUserName: string;
+    notificationMessage: string;
+    isEditing: boolean;
+    selectedUser: User | null;
 }
 
 function App() {
@@ -28,10 +31,12 @@ function App() {
     const [uiState, setUiState] = useState<UIState>({
         isDarkMode: false,
         showNotification: false,
-        newUserName: '',
+        notificationMessage: '',
+        isEditing: false,
+        selectedUser: null,
     });
 
-    const divRef = useRef<HTMLDivElement>(null); // Mantenemos el useRef como ejemplo
+    const divRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const loadUsers = async () => {
@@ -64,8 +69,41 @@ function App() {
         setNewUsersNumber((n) => n + 1);
         setUiState((prev) => ({
             ...prev,
-            newUserName: newUser.name,
+            notificationMessage: `User ${newUser.name} has been created successfully!`,
             showNotification: true,
+        }));
+    };
+
+    const handleSelectUser = (user: User) => {
+        setUiState(prev => ({
+            ...prev,
+            isEditing: true,
+            selectedUser: user
+        }));
+    };
+
+    const handleCancelEdit = () => {
+        setUiState(prev => ({
+            ...prev,
+            isEditing: false,
+            selectedUser: null
+        }));
+    };
+
+    const handleUserUpdated = (updatedUser: User) => {
+        // Actualizar la lista de usuarios
+        setUsers(prevUsers => 
+            prevUsers.map(user => 
+                user._id === updatedUser._id ? { ...updatedUser } : user
+            )
+        );
+        
+        setUiState(prev => ({
+            ...prev,
+            isEditing: false,
+            selectedUser: null,
+            showNotification: true,
+            notificationMessage: `User ${updatedUser.name} has been updated successfully!`
         }));
     };
 
@@ -73,7 +111,6 @@ function App() {
         setUiState((prev) => {
             const newMode = !prev.isDarkMode;
 
-            // Ejemplo de uso de useRef para cambiar estilos directamente
             if (divRef.current) {
                 divRef.current.style.backgroundColor = newMode ? '#333333' : '#ffffff';
                 divRef.current.style.color = newMode ? '#ffffff' : '#000000';
@@ -95,12 +132,43 @@ function App() {
         }
     };
 
+    const renderContent = () => {
+        if (!isLoggedIn) {
+            return (
+                <Login
+                    onLogin={({ email, password }) => handleLogin(email, password)}
+                />
+            );
+        }
+
+        if (uiState.isEditing && uiState.selectedUser) {
+            return (
+                <EditUserForm 
+                    user={uiState.selectedUser}
+                    onUserUpdated={handleUserUpdated}
+                    onCancel={handleCancelEdit}
+                />
+            );
+        }
+
+        return (
+            <>
+                <UsersList 
+                    users={users} 
+                    onSelectUser={handleSelectUser} 
+                />
+                <p>New users: {newUsersNumber}</p>
+                <Form onNewUser={handleNewUser} />
+            </>
+        );
+    };
+
     return (
         <div className="App" ref={divRef}>
             {/* Notification Popup */}
             {uiState.showNotification && (
                 <div className={`notification ${uiState.isDarkMode ? 'dark' : 'light'}`}>
-                    User <strong>{uiState.newUserName}</strong> has been created successfully!
+                    {uiState.notificationMessage}
                 </div>
             )}
 
@@ -109,18 +177,8 @@ function App() {
             </button>
 
             <div className="content">
-                {!isLoggedIn ? (
-                    <Login
-                        onLogin={({ email, password }) => handleLogin(email, password)}
-                    />
-                ) : (
-                    <>
-                        <h2>Bienvenido, {currentUser?.name}!</h2>
-                        <UsersList users={users} />
-                        <p>New users: {newUsersNumber}</p>
-                        <Form onNewUser={handleNewUser} />
-                    </>
-                )}
+                {isLoggedIn && <h2>Bienvenido, {currentUser?.name}!</h2>}
+                {renderContent()}
             </div>
         </div>
     );

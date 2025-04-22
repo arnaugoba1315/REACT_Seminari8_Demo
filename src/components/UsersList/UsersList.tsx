@@ -1,15 +1,21 @@
 import React from "react";
 import { User } from '../../types';
-import styles from './UsersList.module.css'; // Import CSS module
+import styles from './UsersList.module.css';
 
 interface Props {
     users: User[];
+    onSelectUser?: (user: User) => void;
 }
 
-const UsersList: React.FC<Props> = ({ users }) => {
+const UsersList: React.FC<Props> = ({ users, onSelectUser }) => {
     const renderList = (): React.ReactNode[] => {
         return users.map((user) => (
-            <li key={user.name} className={styles.listItem}>
+            <li 
+                key={user._id || user.email} 
+                className={styles.listItem}
+                onClick={() => onSelectUser && onSelectUser(user)}
+                style={{ cursor: onSelectUser ? 'pointer' : 'default' }}
+            >
                 <div className={styles.userInfo}>
                     <h2 className={styles.user}>{user.name}</h2>
                     <h3 className={styles.age}>Age: {user.age}</h3>

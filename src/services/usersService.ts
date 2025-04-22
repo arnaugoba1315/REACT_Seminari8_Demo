@@ -26,6 +26,20 @@ export const addUser = async (newUser: User): Promise<User> => {
     }
 };
 
+// Update an existing user
+export const updateUser = async (userId: string, userData: Partial<User>): Promise<User> => {
+    try {
+        const response = await axios.put<User>(`http://localhost:3000/api/Users/${userId}`, userData);
+        if (response.status !== 200) {
+            throw new Error('Failed to update user');
+        }
+        return response.data;
+    } catch (error) {
+        console.error('Error updating user:', error);
+        throw error;
+    }
+};
+
 // Log in a user
 export const LogIn = async (email: string, password: string): Promise<User> => {
     try {
@@ -39,37 +53,3 @@ export const LogIn = async (email: string, password: string): Promise<User> => {
         throw error;
     }
 };
-
-/* 
-//PODEM FERHO COM UNA PROMESA
-export const addUser = async (newUser: User): Promise<User> => {
-    try {
-        const response = await axios.post('http://localhost:3000/api/Users', newUser);
-        if (response.status !== 200 && response.status !== 201) {
-            throw new Error('Failed to add user');
-        }
-        return response.data
-    } catch (error) {
-        console.error('Error adding user:', error);
-        throw error; // Re-throw the error to handle it in the component
-    }
-};
-*/
-
-/*
-// EXEMPLE SI HAGUESSIM DE MAPEJAR VALORS DIFERENTS AMB ELS QUE ENS RETORNA LA API
-export const mapFromApiToUsers = (apiResponse: UsersResponseFromApi): User[] => {
-    return apiResponse.map(userFromApi => {
-        const {
-            nombre: name,
-            edad: age,
-            correo: email
-        } = userFromApi;
-        return {
-            name,
-            age,
-            email
-        };
-    });
-};
-*/
